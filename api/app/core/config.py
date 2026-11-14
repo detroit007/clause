@@ -38,10 +38,11 @@ class Settings(BaseSettings):
 
     # Retrieval
     top_k: int = 3
+    score_threshold: float = 0.7
 
     # Qdrant
     collection: str = "shop_handbook"  # table
-    qdrant_data: str = "./qdrant_data" # vector store
+    vector_store: str = "./vector_store" # vector store
     # qdrant_url
 
     # Prompts
@@ -63,5 +64,5 @@ def get_embeddings(settings: Settings):
 
 def get_qdrant_client(settings: Settings):
     return QdrantClient(
-        path=settings.qdrant_data
+        path=settings.vector_store
     )
