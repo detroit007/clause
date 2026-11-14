@@ -1,0 +1,89 @@
+
+#  from langchain_community.document_loaders import PyPDFDirectoryLoader
+# from langchain_text_splitters import RecursiveCharacterTextSplitter
+# from langchain.embeddings import init_embeddings  # Embeddings
+# from langchain_core.vectorstores import InMemoryVectorStore # VECTOR DATABASE
+# from langchain.chat_models import init_chat_model # LLM
+
+# DATA_PATH = "data/shop_handbook.pdf"
+# CHAT_MODEL = "gemma3:1b"
+# CHAT_PROVIDER = "ollama"
+# CHAT_TEMPERATURE = "0.1"
+# EMBED_MODEL = "nomic-embed-text:latest"
+# EMBED_PROVIDER = "ollama"
+# EMBED = 768
+
+# TOP_K = 3
+
+# # Indexing
+# # 1. Load
+
+# pages = PyPDFDirectoryLoader(DATA_PATH).load()
+
+# # 2. Chunks 
+# splitter = RecursiveCharacterTextSplitter(
+#     chunk_size = 600,
+#     chunk_overlap = 100,
+#     separators = ["\n\n", "\n", " ",""]   # Priority while splitting:  Paragraphy - Sentence - words - Characters
+# )
+# chunks = splitter.split_documents(pages)
+
+# # 3. Embed                                  # Semantic Search using Retrieval Approach
+
+# embed = init_embeddings(
+#     model = EMBED_MODEL,
+#     provider= EMBED_PROVIDER
+# )
+# print(len(embed.embed_query("HI")))
+
+# # 4. Store
+
+# vector_store = InMemoryVectorStore.from_documents(
+#     documents=chunks,
+#     embedding=embed
+
+# )
+
+# # Answering
+# # 1. Define LLM
+
+# llm = init_chat_model(
+#     model = CHAT_MODEL,
+#     model_provider= CHAT_PROVIDER,
+#     temperature = CHAT_TEMPERATURE
+# )
+
+# query = input("YOU:").strip()
+
+# # User Query will pass to similarity Search
+# # On backend of Similarity Search 3 steps are performed:
+# # 1. embed.embed_documents(chunks) -- 8 chunks --- 8 vectors
+# # 2. embed.embed_query(query) # vector -- dimension = 768
+# # 3.cosine Similarity -- distance formula
+
+# # 5. Retrieve
+# retrieved_docs = vector_store.similarity_search(query, k=TOP_K) # Retrieve 3 docs/ 3 top relevant chunks
+
+# # Similarity Score 
+# # text = []
+# # for d in retrieved_docs:
+# # texts.append(d.page_content)
+# # context = "\n\n".join(texts)
+# # [for ] list comprehension
+
+# context = "\n\n".join(d.page_content for d in retrieved_docs )  #String Object  # Generator Expression
+
+# SYSTEM = (
+#     "You are helpful clause shop assistant."
+#     "Answers only from provided context."
+# )
+
+# messages = [
+#     {"role": "system", "content": SYSTEM},
+#     {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
+# ]
+
+# # Augment and Generate
+
+# print(llm.invoke(messages).text)
+
