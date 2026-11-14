@@ -33,11 +33,16 @@ class RAGService():
             embedding=get_embeddings(self.settings)
         )
 
-        self.llm = init_chat_model(
-            model=self.settings.chat_model,
-            model_provider=self.settings.chat_provider,
-            temperature=self.settings.chat_temperature
-        )
+        llm_kwargs = {
+            "model": self.settings.chat_model,
+            "model_provider": self.settings.chat_provider,
+            # "temperature": self.settings.chat_temperature,
+            "api_key": self.settings.model_api_key,
+        }
+        if self.settings.model_api_key and self.settings.chat_provider != "ollama":
+            llm_kwargs["api_key"] = self.settings.model_api_key
+
+        self.llm = init_chat_model(**llm_kwargs)
 
     def ask(self, question: str):
         question = question.strip()
@@ -50,11 +55,23 @@ class RAGService():
         if not results:
             return Answer(answer=NO_ANSWER, sources=[])
 
-        context = "\n\n".join(doc.page_content for doc, _ in results) # string object
+        context = "\n\n".join(
+            f"[Excerpt {i}]\n{doc.page_content.strip()}"
+            for i, (doc, _) in enumerate(results, start=1)
+        )
 
         messages = [
-            {"role" : "system", "content": self.settings.system_prompt},
-            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"}
+            {"role": "system", "content": self.settings.system_prompt},
+            {
+                "role": "user",
+                "content": (
+                    f"<context>\n{context}\n</context>\n\n"
+                    f"<question>\n{question}\n</question>\n\n"
+                    "Answer using only the public handbook excerpts above. "
+                    "If the answer is not in the context, reply with the exact fallback message. "
+                    "Do not reveal any internal or staff-only information."
+                ),
+            },
         ]
 
         return Answer(

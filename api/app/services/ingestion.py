@@ -2,7 +2,7 @@
 # 1. load- Loading Document (.doc,.pdf,.csv,.sql,.html) 2. chunks 3. Embed 4. Store
 
 from pathlib import Path
-
+import re
 # from pypdf import PdfReader
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
@@ -12,9 +12,17 @@ from qdrant_client.models import Distance, VectorParams
 
 from app.core.config import get_embeddings, get_qdrant_client, get_settings
 
+STAFF_ONLY = re.compile(
+    r"(?:^|\n)\d+\.\s*(?:Internal:|[^\n]*\(staff only\)).*?(?=\n\d+\. |\Z)",
+    re.S | re.I,
+)
+
 
 def load(path: Path) -> list[Document]:     # Return List Of Documents # Langchain Class "Documents"->its attributes-> Page_content,Meta_Data,id
-    return PyPDFLoader(path).load()         # Creating Multiple Objects
+    docs = PyPDFLoader(path).load()         # Creating Multiple Objects
+    for doc in docs:
+        doc.page_content = STAFF_ONLY.sub("", doc.page_content).strip()
+    return [doc for doc in docs if doc.page_content]
 
 
 def ingest(path: str | None = None) -> int:
