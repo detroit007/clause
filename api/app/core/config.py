@@ -13,7 +13,7 @@ ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        prefix="RAG_",
+        env_prefix="RAG_",
         env_file=ENV_FILE,
         extra="ignore"
     )
